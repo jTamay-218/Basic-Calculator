@@ -1,0 +1,266 @@
+<html>
+  <head>
+    <title>Calculator</title>
+    <style>
+      .button {
+        width: 80px;
+        height: 40px;
+        background-color: #6969b3;
+        border: 0px;
+        color: #ffffffca;
+        border-radius: 6px;
+        box-shadow: 3px 5px 5px black;
+      }
+
+      button:hover {
+        background-color: #98c1d9;
+      }
+
+      button:active {
+        box-shadow: 2px 4px 4px black;
+      }
+
+      .flexContainer {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-evenly;
+        align-items: baseline;
+        width: 390px;
+        row-gap: 8px;
+      }
+
+      .displayContainer {
+        display: flex;
+        justify-content: flex-end;
+        width: 390px;
+      }
+
+      #display {
+        margin-right: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Calculator</h1>
+    <div class="displayContainer">
+      <span id="display"></span>
+    </div>
+
+    <div class="flexContainer">
+      <button class="button number">7</button>
+      <button class="button number">8</button>
+      <button class="button number">9</button>
+      <button class="button operator">/</button>
+
+      <button class="button number">4</button>
+      <button class="button number">5</button>
+      <button class="button number">6</button>
+      <button class="button operator">*</button>
+
+      <button class="button number">1</button>
+      <button class="button number">2</button>
+      <button class="button number">3</button>
+      <button class="button operator">-</button>
+
+      <button class="button number">0</button>
+      <button class="button decimal">.</button>
+      <button class="button equals">=</button>
+      <button class="button operator">+</button>
+
+      <button class="button parenthesis">(</button>
+      <button class="button parenthesis">)</button>
+
+      <!--adding a clear button-->
+      <button class="button clear">C</button>
+    </div>
+
+    <script>
+      const numbersArr = Array.from(document.getElementsByClassName("number"));
+      const operatorsArr = Array.from(document.getElementsByClassName("operator"));
+      const parenthesisArr = Array.from(document.getElementsByClassName("parenthesis"));
+      const numberStrs = "0123456789".split("");
+
+      
+
+      // assigning precedence to each operator, which will dictate popping and pushing in the stack
+      const precedence = {
+        "+": 1,
+        "-": 1,
+        "*": 2,
+        "/": 2,
+      };
+      
+      // helper function that will convert infix to postfix
+      function infixToPostfix(expression){
+        // creating a queue to represent the output and a stack to hold operators
+        const postfixQueue = []; // *will be calling them stacks and queues, technically arrays
+        const opStack = [];
+
+        // spliting each part of the expression into its own segment
+        const tokens = expression.match(/(\d+|\+|\-|\*|\/|\^|\(|\))/g);
+
+        // for loop that will check each token
+        tokens.forEach((token) => {
+          if(!isNaN(token)){
+            postfixQueue.push(token); // adding the number to the postfix queue
+          }
+          else if(token in precedence){ 
+            while(opStack.length && precedence[opStack[opStack.length-1]] >= precedence[token]){
+              // moving from the stack into the output only when the stack is not empty and the precedence of the operator at stack's top is >= the current operator 
+              postfixQueue.push(opStack.pop());
+            }
+            opStack.push(token); // adding to the stack since it is an operator
+          }
+          else if(token === "("){
+            opStack.push(token);
+          }
+          else if(token === ")"){
+            while (opStack.length && opStack[opStack.length - 1] !== "(") {
+              postfixQueue.push(opStack.pop()); // represents the end of the currently parenthesized segment
+            }
+            opStack.pop(); // popping the other end
+          }   
+        });
+       
+        while (opStack.length) { // at this point pushing the remaining operators into the postfix
+          postfixQueue.push(opStack.pop());
+        }
+
+        return postfixQueue.join(" "); // returning the postfix expression as a string 
+      }
+
+      function evaluatePostfix(expression) {
+        // making a stack to store the values  and the set of tokens for sorting in said stack
+        const numStack = [];
+        const tokens = expression.split(" ");
+
+        tokens.forEach((token) => {
+          if (!isNaN(token)) {
+            numStack.push(Number(token)); // pushing the token in numerical form 
+          } 
+          else {
+            // getting and popping two operands from the stack 
+            const b = numStack.pop();
+            const a = numStack.pop();
+
+            // performing the appropriate operation on b and a 
+            switch (token) {
+              case "+":
+                numStack.push(a + b);
+                break;
+              case "-":
+                numStack.push(a - b);
+                break;
+              case "*":
+                numStack.push(a * b);
+                break;
+              case "/":
+                numStack.push(a / b);
+                break;
+            }
+          }
+        });
+
+        return numStack.pop(); //returning the final value
+      }
+
+
+      const data = {
+        displayString: "0",
+        appendStringNum: (newChar) => {
+          if (newChar === ".") {
+            //decimal + 0?
+          }
+
+          if (numberStrs.includes(newChar)) {
+            if (data.displayString === "0") {
+              data.displayString = "";
+            }
+            data.displayString += newChar;
+          }
+          data.updateDisplay();
+        },
+
+        appendStringOperator: (newChar) => {
+          if (numberStrs.includes(data.displayString.slice(-1)) || data.displayString.slice(-1) === ")") {
+            data.displayString += newChar;
+          }
+          data.updateDisplay();
+        },
+
+        appendStringParenthesis: (newChar) => {
+          if (newChar === ")") {
+            if (data.displayString.split("(").length <= data.displayString.split(")").length) {
+              //if there are not enough open parenthesis to add a closing parenthesis terminate early
+              return;
+            }
+            if (operatorsArr.map((operator) => operator.innerText).includes(data.displayString[data.displayString.length - 1])) {
+              //early termination for adding parenthesis after operator
+              return;
+            }
+          }
+          if (data.displayString === "0") {
+            data.displayString = "";
+            data.displayString += newChar;
+            return;
+          }
+
+          data.displayString += newChar;
+
+          data.updateDisplay();
+        },
+        updateDisplay: () => {
+          const display = document.getElementById("display");
+          display.innerText = data.displayString;
+        },
+
+        clearDisplay: () => {
+          data.displayString = "0"; // resetting the value back to 0
+          data.updateDisplay();
+        },
+
+      };
+
+      const display = document.getElementById("display");
+      display.innerText = data.displayString;
+
+      numbersArr.map((elem, i) => {
+        elem.addEventListener("click", (evt) => {
+          data.appendStringNum(elem.innerText);
+        });
+      });
+
+      operatorsArr.map((elem, i) => {
+        elem.addEventListener("click", (evt) => {
+          data.appendStringOperator(elem.innerText);
+        });
+      });
+
+      parenthesisArr.map((elem, i) => {
+        elem.addEventListener("click", (evt) => {
+          data.appendStringParenthesis(elem.innerText);
+        });
+      });
+
+      const equalsButton = document.getElementsByClassName("equals")[0];
+      equalsButton.addEventListener("click", () => {
+        try {
+          const postfixExpr = infixToPostfix(data.displayString);
+          const result = evaluatePostfix(postfixExpr);
+          data.displayString = result.toString();
+        } catch (e) {
+          data.displayString = "Error";
+        }
+        data.updateDisplay();
+      });
+
+      const clearButton = document.getElementsByClassName("clear")[0];
+      clearButton.addEventListener("click", () => {
+        data.clearDisplay();
+      });
+
+    </script>
+  </body>
+</html>
