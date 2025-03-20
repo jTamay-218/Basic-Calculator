@@ -93,7 +93,7 @@
       };
       
       // helper for implicit multiplication
-      function insertImplicitMultiplication(expression) {
+      function imCompatibility(expression) {
         // accounting for multiplication between a number and an opening parenthesis
         expression = expression.replace(/(\d)(\()/g, '$1*$2');
         
@@ -102,6 +102,8 @@
 
       // helper function that will convert infix to postfix
       function infixToPostfix(expression){
+        expression = imCompatibility(expression);
+        
         // creating a queue to represent the output and a stack to hold operators
         const postfixQueue = []; // *will be calling them stacks and queues, technically arrays
         const opStack = [];
