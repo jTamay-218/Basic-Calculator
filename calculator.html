@@ -92,6 +92,14 @@
         "/": 2,
       };
       
+      // helper for implicit multiplication
+      function insertImplicitMultiplication(expression) {
+        // accounting for multiplication between a number and an opening parenthesis
+        expression = expression.replace(/(\d)(\()/g, '$1*$2');
+        
+        return expression;
+      }
+
       // helper function that will convert infix to postfix
       function infixToPostfix(expression){
         // creating a queue to represent the output and a stack to hold operators
